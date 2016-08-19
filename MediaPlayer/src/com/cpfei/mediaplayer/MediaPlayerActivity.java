@@ -1,0 +1,218 @@
+package com.cpfei.mediaplayer;
+
+import java.io.IOException;
+
+import android.app.Activity;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.media.MediaPlayer.OnErrorListener;
+import android.media.MediaPlayer.OnInfoListener;
+import android.media.MediaPlayer.OnPreparedListener;
+import android.media.MediaPlayer.OnSeekCompleteListener;
+import android.media.MediaPlayer.OnVideoSizeChangedListener;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.view.Display;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
+import android.widget.Toast;
+
+/**
+ * 在播放视频是start()方法要等到onPrepared方法执行后在调用
+ * 
+ * @author cpfei
+ * 
+ */
+
+public class MediaPlayerActivity extends Activity implements SurfaceHolder.Callback, OnCompletionListener,
+		OnInfoListener, OnErrorListener, OnPreparedListener, OnSeekCompleteListener, OnVideoSizeChangedListener {
+
+	private SurfaceView mSurfaceView;
+
+	private Display currDisplay;
+	private SurfaceHolder holder;
+	private MediaPlayer player;
+	private int vWidth, vHeight;
+	private SeekBar mSeekBar;
+	private ProgressBar mprogressBar;
+
+	private boolean isClickPlay = false, isPrepared = false;
+
+	@SuppressWarnings("deprecation")
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_media_player);
+
+		mSeekBar = (SeekBar) findViewById(R.id.seekBar);
+		mprogressBar = (ProgressBar) findViewById(R.id.progressBar);
+		mprogressBar.setVisibility(View.GONE);
+
+		mSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
+		// 给SurfaceView添加CallBack监听
+		holder = mSurfaceView.getHolder();
+		holder.addCallback(this);
+		// 为了可以播放视频或者使用Camera预览，我们需要指定其Buffer类型
+		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
+		// 下面开始实例化MediaPlayer对象
+		initMediaPlayer();
+
+		// 然后，我们取得当前Display对象
+		currDisplay = this.getWindowManager().getDefaultDisplay();
+	}
+
+	private void initMediaPlayer() {
+		player = new MediaPlayer();
+		player.setOnCompletionListener(this);
+		player.setOnErrorListener(this);
+		player.setOnInfoListener(this);
+		player.setOnPreparedListener(this);
+		player.setOnSeekCompleteListener(this);
+		player.setOnVideoSizeChangedListener(this);
+		// 然后指定需要播放文件的路径，初始化MediaPlayer
+		String dataPath = Environment.getExternalStorageDirectory().getPath() + "/Test_Movie.mp4";
+
+		String url = "http://baobab.wdjcdn.com/1460033792361x(1).mp4";
+
+		try {
+			// player.setDataSource(dataPath);
+			player.setDataSource(url);
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void onClick(View v) {
+		// 当prepare完成后，该方法触发，在这里我们播放视频
+		// 然后开始播放视频
+		isClickPlay = true;
+		if (isPrepared) {
+			mprogressBar.setVisibility(View.GONE);
+			player.start();
+		} else {
+			mprogressBar.setVisibility(View.VISIBLE);
+		}
+	}
+
+	@Override
+	public void surfaceCreated(SurfaceHolder holder) {
+		// 当SurfaceView中的Surface被创建的时候被调用
+		// 在这里我们指定MediaPlayer在当前的Surface中进行播放
+		player.setDisplay(holder);
+		// 在指定了MediaPlayer播放的容器后，我们就可以使用prepare或者prepareAsync来准备播放了
+		player.prepareAsync();
+	}
+
+	@Override
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		// 当Surface尺寸等参数改变时触发
+	}
+
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		// 当Surface销毁时触发
+		if (player != null) {
+			player.release();
+		}
+	}
+
+	@Override
+	public void onCompletion(MediaPlayer mp) {
+		// 当MediaPlayer播放完成后触发
+		// this.finish();
+		if (player != null) {
+			player.stop();
+			player.release();
+		}
+	}
+
+	@Override
+	public boolean onError(MediaPlayer mp, int what, int extra) {
+		switch (what) {
+		case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+
+			break;
+		case MediaPlayer.MEDIA_ERROR_UNKNOWN:
+
+			break;
+		default:
+			break;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean onInfo(MediaPlayer mp, int what, int extra) {
+		// 当一些特定信息出现或者警告时触发
+		switch (what) {
+		case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
+			break;
+		case MediaPlayer.MEDIA_INFO_METADATA_UPDATE:
+			break;
+		case MediaPlayer.MEDIA_INFO_VIDEO_TRACK_LAGGING:
+			break;
+		case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
+			break;
+		}
+		return false;
+	}
+
+	@Override
+	public void onPrepared(MediaPlayer mp) {
+		// 当prepare完成后，该方法触发，在这里我们播放视频
+
+		// 首先取得video的宽和高
+		vWidth = player.getVideoWidth();
+		vHeight = player.getVideoHeight();
+
+		if (vWidth > currDisplay.getWidth() || vHeight > currDisplay.getHeight()) {
+			// 如果video的宽或者高超出了当前屏幕的大小，则要进行缩放
+			float wRatio = (float) vWidth / (float) currDisplay.getWidth();
+			float hRatio = (float) vHeight / (float) currDisplay.getHeight();
+
+			// 选择大的一个进行缩放
+			float ratio = Math.max(wRatio, hRatio);
+
+			vWidth = (int) Math.ceil((float) vWidth / ratio);
+			vHeight = (int) Math.ceil((float) vHeight / ratio);
+
+			// 设置surfaceView的布局参数
+			mSurfaceView.setLayoutParams(new RelativeLayout.LayoutParams(vWidth, vHeight));
+
+		}
+		isPrepared = true;
+
+		mprogressBar.setVisibility(View.GONE);
+		if (isClickPlay) {
+			player.start();
+		}
+
+	}
+
+	@Override
+	public void onSeekComplete(MediaPlayer mp) {
+		// seek操作完成时触发
+
+	}
+
+	@Override
+	public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
+		// 当video大小改变时触发
+		// 这个方法在设置player的source后至少触发一次
+
+	}
+
+}

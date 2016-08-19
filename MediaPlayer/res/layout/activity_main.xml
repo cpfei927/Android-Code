@@ -1,0 +1,42 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="${relativePackage}.${activityClass}" >
+
+    <Button
+        android:onClick="onClick"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:gravity="center"
+        android:text="开始播放--手机自带播放器" />
+    
+    
+    <Button
+        android:onClick="onClickVideo"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:gravity="center"
+        android:text="开始播放--VideoView" />
+    
+    <Button
+        android:onClick="onClickMedia"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:gravity="center"
+        android:text="开始播放--MediaPlayer" />
+    
+    
+    
+    <VideoView 
+        android:id="@+id/video_view"
+        android:layout_width="match_parent"
+        android:layout_margin="10dp"
+        android:layout_height="200dp"/>
+    
+
+</LinearLayout>
